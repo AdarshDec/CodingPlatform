@@ -1,0 +1,36 @@
+from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
+from Platfomr.src.config.config import GlobalConfig
+from Platform.src.user_management.exceptions import EmailServiceException
+
+mail_config = ConnectionConfig(
+    MAIL_USERNAME=GlobalConfig.MAIL_USERNAME,
+    MAIL_PASSWORD=GlobalConfig.MAIL_PASSWORD,
+    MAIL_FROM=GlobalConfig.MAIL_FROM,
+    MAIL_PORT=GlobalConfig.MAIL_PORT,
+    MAIL_SERVER=GlobalConfig.MAIL_SERVER,
+    MAIL_FROM_NAME="Coding Platform",
+    USE_CREDENTIALS=True,
+    VALIDATE_CERTS=True,
+)
+
+fast_mail = FastMail(mail_config)
+
+class EmailService:
+    async def send_verification_email(self, email: str, token: str):
+        verification_link = f"{GlobalConfig.BASE_URL}/verify-email?token={token}"
+        message = MessageSchema(
+            subject="Verify your email",
+            recipients=[email],
+            body=f"""
+                <h2>Welcome!</h2>
+                <p>Click the link to verify your email:</p>
+                <a href="{verification_link}">{verification_link}</a>
+            """,
+            subtype="html",
+        )
+
+        try:
+            await fast_mail.send_message(message)
+        except Exception as e:
+            raise EmailServiceException(f"Failed to send verification email: {str(e)}")
+        
